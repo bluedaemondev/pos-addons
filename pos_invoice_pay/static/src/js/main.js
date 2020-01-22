@@ -176,6 +176,8 @@ models.PosModel = models.PosModel.extend({
                 self.gui.current_screen.show();
             });
         });
+        //debugger;
+        //posmodel.load_orders();
     },
 
     prepare_invoices_data: function (data) {
@@ -235,6 +237,7 @@ models.PosModel = models.PosModel.extend({
     update_or_fetch_sale_order: function (id) {
         var def = $.Deferred(),
             self = this;
+            //debugger;
             this.get_res('sale.order', id).
                 then(function (res) {
                     self.prepare_so_data(res);
@@ -330,6 +333,7 @@ models.Order = models.Order.extend({
         if(cashregister.journal.type !== 'cash' || this.pos.config.iface_precompute_cash){
             newPaymentline.set_amount( Math.max(this.invoice_to_pay.get_due(),0) );
         }
+        //debugger;
         this.paymentlines.add(newPaymentline);
         this.select_paymentline(newPaymentline);
     },
@@ -912,7 +916,20 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
 
     render_paymentlines: function () {
         var self = this;
-        var order = this.pos.get_order();
+        var order;
+        /*if (!!(this.pos.widself && this.pos.widself.selected_SO))
+            {
+                //debugger;
+                this.pos.sale_orders.filter(
+                    function(slo){
+                        if (slo.id == this) 
+                            return slo;
+                    }, this.pos.widself.selected_SO.id);
+
+                order = this.pos.widself.selected_SO;}
+        else*/
+            order = this.pos.get_order();
+
         if (!order || typeof order !== 'object') {
             return;
         }
@@ -926,6 +943,9 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
             var total = self.pos.selected_invoice.residual,
                 due = 0,
                 plines = order.paymentlines.models;
+                if (plines && plines[0])
+                    plines[0].amount = self.pos.selected_invoice.residual;
+
             if (paymentline === void 0) {
                 due = total - order.get_total_paid();
             } else {
@@ -1001,6 +1021,7 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
     finalize_validation: function () {
         var self = this,
             order = this.pos.get_order();
+            //debugger;
         order.invoice_to_pay = this.pos.selected_invoice;
         self.pos.start_invoice_processing();
         if (order.is_paid_with_cash() && this.pos.config.iface_cashdrawer) {
