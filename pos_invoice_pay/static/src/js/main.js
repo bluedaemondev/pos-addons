@@ -936,17 +936,7 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
     render_paymentlines: function () {
         var self = this;
         var order;
-        /*if (!!(this.pos.widself && this.pos.widself.selected_SO))
-            {
-                //debugger;
-                this.pos.sale_orders.filter(
-                    function(slo){
-                        if (slo.id == this) 
-                            return slo;
-                    }, this.pos.widself.selected_SO.id);
-
-                order = this.pos.widself.selected_SO;}
-        else*/
+        
             order = this.pos.get_order();
 
         if (!order || typeof order !== 'object') {
@@ -962,9 +952,6 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
             var total = self.pos.selected_invoice.residual,
                 due = 0,
                 plines = order.paymentlines.models;
-                if (plines && plines[0])
-                    plines[0].amount = self.pos.selected_invoice.residual;
-
             if (paymentline === void 0) {
                 due = total - order.get_total_paid();
             } else {
