@@ -21,6 +21,8 @@
         "base_automation",
         "sale_management",
         "pos_longpolling",
+        "sale_stock",
+        "sale",
     ],
     "external_dependencies": {"python": [], "bin": []},
     "data": [

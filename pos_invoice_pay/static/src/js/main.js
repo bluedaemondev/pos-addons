@@ -36,22 +36,10 @@ var round_pr = utils.round_precision;
 
 
 models.load_models({
-	/*
-	model: 'sale.order',
-     fields: ['name', 'partner_id', 'date_order', 'user_id',
-     'amount_total', 'order_line', 'invoice_status'],
-     */
     model: 'sale.order',
     fields: ['name', 'partner_id', 'date_order', 'user_id',
     'amount_total', 'order_line', 'invoice_status'],
-    domain: function(self) {
-        let dom = [
-            ['invoice_status', '=', 'to invoice'],
-            ['state', '=', 'sale'],
-            ['company_id', '=', self.company.id],
-        ];
-        return dom;
-    },
+    domain:[['invoice_status', '=', 'to invoice'], ['state', '=', 'sale']],
     loaded: function (self, sale_orders) {
         var so_ids = _.pluck(sale_orders, 'id');
         self.prepare_so_data(sale_orders);
@@ -65,14 +53,7 @@ models.load_models({
     model: 'account.invoice',
     fields: ['name', 'partner_id', 'date_invoice','number', 'date_due', 'origin',
     'amount_total', 'user_id', 'residual', 'state', 'amount_untaxed', 'amount_tax'],
-    domain: function(self){
-        let dom = [
-            ['state', '=', 'open'],
-            ['type','=', 'out_invoice'],
-            ['company_id', '=', self.company.id],
-        ];
-        return dom;
-   	},
+    domain: [['state', '=', 'open'],
     ['type','=', 'out_invoice']],
     loaded: function (self, invoices) {
         var invoices_ids = _.pluck(invoices, 'id');
@@ -192,11 +173,20 @@ models.PosModel = models.PosModel.extend({
         var self = this;
         _.each(ids, function (id) {
             self.update_or_fetch_sale_order(id).then(function () {
+                if (!posmodel.sale_orders.includes(ids))
+                {   //adds this new order to the posmodel.sale_orders
+                    //enabling the user to cancel/invoice it correctly, without
+                    //refreshing the POS page
+                    var new_ord = self.get_res("sale.order",ids);
+                    new_ord.then(function(ord) {
+                        if (ord && ord[0]) {
+                            posmodel.sale_orders.push(ord[0]);
+                        }
+                    });
+                }
                 self.gui.current_screen.show();
             });
         });
-        //debugger;
-        //posmodel.load_orders();
     },
 
     prepare_invoices_data: function (data) {
@@ -288,6 +278,7 @@ models.PosModel = models.PosModel.extend({
             orders_to_mute = _.filter(this.db.get_orders(), function(mtd_order) {
                 return mtd_order.data.invoice_to_pay;
             });
+            debugger;
         if (orders_to_mute) {
             for (i = 0; orders_to_mute.length > i; i++) {
                 order = orders_to_mute[i];
@@ -638,6 +629,8 @@ var InvoicesAndOrdersBaseWidget = screens.ScreenWidget.extend({
     },
     render_data: function (data) {
         var contents = this.$el[0].querySelector('.list-contents');
+        let self = this;
+
         contents.innerHTML = "";
         for(var i = 0, len = Math.min(data.length,1000); i < len; i++){
             var item = data[i];
@@ -658,10 +651,50 @@ var InvoicesAndOrdersBaseWidget = screens.ScreenWidget.extend({
                     $tr.appendChild($td);
                 }
                 item_line.innerHTML = item_html;
-                item_line = item_line.childNodes[1];
-
-            contents.appendChild(item_line);
-            contents.appendChild($tr);
+                item_line = item_line.childNodes[1]
+                let cancel_btn = document.createElement('button');
+                cancel_btn.classList.add('btn-danger');
+                cancel_btn.innerHTML = "Cancelar";
+                cancel_btn.addEventListener('click', function(ev_args){
+                    debugger;
+                    let aux_so = posmodel.sale_orders.filter( 
+                        function(so){
+                            if(so.id == ev_args.path[1].dataset.id) 
+                                return so;
+                        }, posmodel.sale_orders)
+                    if (aux_so.length > 0) {
+                        rpc.query({
+                            model: 'sale.order',
+                            method: 'cancel_order_by_id',
+                            args: [aux_so,aux_so.id],
+                        }).then(function (datas) {
+                            // Explicitly update the db to avoid race condition.
+                            item_line.style.display = "none";
+                            self.gui.show_popup('confirm', {
+                                'title': _t('Delete'),
+                                'body': _t('La orden de venta fue cancelada, junto con sus remitos.')
+                                });
+                            let arr = [];
+                            for (let i = 0;i < posmodel.sale_orders.length; i++){
+                                arr.push(posmodel.sale_orders[i].id);
+                            }
+                            self.pos.update_sale_orders_from_poll(arr || null);
+                            })
+                        .fail(function (err, event) {
+                            self.gui.show_popup('error', {
+                                'title': _t(err.message),
+                                'body': _t(err.data.arguments[0])
+                            });
+                            event.preventDefault();
+                        });
+                    }
+                })
+            if(item_line.style.display != "none")
+            {
+                item_line.appendChild(cancel_btn);
+                contents.appendChild(item_line);
+                contents.appendChild($tr);
+            }
         }
     },
     render_lines_table: function (data_lines) {
@@ -952,7 +985,7 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
         if (!order || typeof order !== 'object') {
             return;
         }
-        var lines = order.get_paymentlines();
+        var lines = order.get_paymentlines() || null;
         if (typeof this.pos.selected_invoice !== 'object') {
             return;
         }
@@ -962,9 +995,7 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
             var total = self.pos.selected_invoice.residual,
                 due = 0,
                 plines = order.paymentlines.models;
-                if (plines && plines[0])
-                    plines[0].amount = self.pos.selected_invoice.residual;
-
+            
             if (paymentline === void 0) {
                 due = total - order.get_total_paid();
             } else {
