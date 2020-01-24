@@ -2,10 +2,28 @@
 # Copyright 2018 Kolushov Alexandr <https://it-projects.info/team/KolushovAlexandr>
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 from odoo import api, models, fields, _
-
+import ipdb
 SO_CHANNEL = 'pos_sale_orders'
 INV_CHANNEL = 'pos_invoices'
 
+
+class SaleOrder(models.Model):
+   _inherit = 'sale.order'
+
+   @api.model
+   def cancel_order_by_id(self,so_aux,id):
+        #ipdb.set_trace()
+        sale_obj = self.browse(so_aux[0]['id'])
+
+        msg = ''
+        ret = False
+        
+        if sale_obj and sale_obj.state != 'cancel':
+            ret = True
+            sale_obj.action_cancel()
+        elif sale_obj.state == 'cancel':
+        	msg = 'La orden de venta ya está cancelada.'
+        return ret,msg
 
 class PosOrder(models.Model):
     _inherit = 'pos.order'
