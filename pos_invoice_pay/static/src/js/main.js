@@ -246,7 +246,6 @@ models.PosModel = models.PosModel.extend({
     update_or_fetch_sale_order: function (id) {
         var def = $.Deferred(),
             self = this;
-            //debugger;
             this.get_res('sale.order', id).
                 then(function (res) {
                     self.prepare_so_data(res);
@@ -278,7 +277,6 @@ models.PosModel = models.PosModel.extend({
             orders_to_mute = _.filter(this.db.get_orders(), function(mtd_order) {
                 return mtd_order.data.invoice_to_pay;
             });
-            debugger;
         if (orders_to_mute) {
             for (i = 0; orders_to_mute.length > i; i++) {
                 order = orders_to_mute[i];
@@ -343,7 +341,6 @@ models.Order = models.Order.extend({
         if(cashregister.journal.type !== 'cash' || this.pos.config.iface_precompute_cash){
             newPaymentline.set_amount( Math.max(this.invoice_to_pay.get_due(),0) );
         }
-        //debugger;
         this.paymentlines.add(newPaymentline);
         this.select_paymentline(newPaymentline);
     },
@@ -656,7 +653,6 @@ var InvoicesAndOrdersBaseWidget = screens.ScreenWidget.extend({
                 cancel_btn.classList.add('btn-danger');
                 cancel_btn.innerHTML = "Cancelar";
                 cancel_btn.addEventListener('click', function(ev_args){
-                    debugger;
                     let aux_so = posmodel.sale_orders.filter( 
                         function(so){
                             if(so.id == ev_args.path[1].dataset.id) 
@@ -969,18 +965,7 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
     render_paymentlines: function () {
         var self = this;
         var order;
-        /*if (!!(this.pos.widself && this.pos.widself.selected_SO))
-            {
-                //debugger;
-                this.pos.sale_orders.filter(
-                    function(slo){
-                        if (slo.id == this) 
-                            return slo;
-                    }, this.pos.widself.selected_SO.id);
-
-                order = this.pos.widself.selected_SO;}
-        else*/
-            order = this.pos.get_order();
+        order = this.pos.get_order();
 
         if (!order || typeof order !== 'object') {
             return;
@@ -1071,7 +1056,6 @@ var InvoicePayment = screens.PaymentScreenWidget.extend({
     finalize_validation: function () {
         var self = this,
             order = this.pos.get_order();
-            //debugger;
         order.invoice_to_pay = this.pos.selected_invoice;
         self.pos.start_invoice_processing();
         if (order.is_paid_with_cash() && this.pos.config.iface_cashdrawer) {
