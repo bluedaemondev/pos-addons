@@ -2,7 +2,7 @@
 # Copyright 2018 Kolushov Alexandr <https://it-projects.info/team/KolushovAlexandr>
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 from odoo import api, models, fields, _
-import ipdb
+
 SO_CHANNEL = 'pos_sale_orders'
 INV_CHANNEL = 'pos_invoices'
 
@@ -20,6 +20,7 @@ class SaleOrder(models.Model):
         
         if sale_obj and sale_obj.state != 'cancel':
             ret = True
+            msg = 'Orden validada correctamente'
             sale_obj.action_cancel()
         elif sale_obj.state == 'cancel':
         	msg = 'La orden de venta ya está cancelada.'
