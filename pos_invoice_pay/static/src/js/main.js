@@ -653,6 +653,7 @@ var InvoicesAndOrdersBaseWidget = screens.ScreenWidget.extend({
                 cancel_btn.classList.add('btn-danger');
                 cancel_btn.innerHTML = "Cancelar";
                 cancel_btn.addEventListener('click', function(ev_args){
+                    //debugger;
                     let aux_so = posmodel.sale_orders.filter( 
                         function(so){
                             if(so.id == ev_args.path[1].dataset.id) 

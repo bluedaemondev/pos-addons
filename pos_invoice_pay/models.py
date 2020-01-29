@@ -19,6 +19,7 @@ class SaleOrder(models.Model):
         
         if sale_obj and sale_obj.state != 'cancel':
             ret = True
+            msg = 'Orden validada correctamente'
             sale_obj.action_cancel()
         elif sale_obj.state == 'cancel':
         	msg = 'La orden de venta ya está cancelada.'
