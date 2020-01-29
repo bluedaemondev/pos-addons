@@ -12,7 +12,6 @@ class SaleOrder(models.Model):
 
    @api.model
    def cancel_order_by_id(self,so_aux,id):
-        #ipdb.set_trace()
         sale_obj = self.browse(so_aux[0]['id'])
 
         msg = ''
